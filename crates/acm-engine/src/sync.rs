@@ -19,6 +19,7 @@ const REPO_README: &str = "\
 
 This repository is managed by `acm` and uses the fastlane match layout.
 The `.cer`, `.p12`, and provisioning profile files are encrypted.
+`devices.txt` lists devices to register and stays in this repository.
 Set `MATCH_PASSWORD` before running `acm sync`.
 ";
 

@@ -13,6 +13,7 @@ pub const SAMPLE_CONFIG: &str = r#"# One file replaces Matchfile + Fastfile for 
 # The encryption password is NOT stored here. Export MATCH_PASSWORD instead.
 
 storage_mode = "local"
+# Device list stored in the certificate repository, next to certs/ and profiles/.
 devices_file = "devices.txt"
 
 [local]
@@ -223,8 +224,9 @@ impl AppConfig {
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub storage_mode: StorageMode,
-    #[serde(default)]
-    pub devices_file: Option<PathBuf>,
+    /// Path of the device list inside the certificate repository.
+    #[serde(default = "default_devices_file")]
+    pub devices_file: PathBuf,
     #[serde(default)]
     pub git: Option<GitStorageConfig>,
     #[serde(default)]
@@ -370,6 +372,27 @@ impl Config {
             .map_err(|err| Error::Config(format!("cannot read API key {}: {err}", path.display())))
     }
 
+    /// Relative path of `devices.txt` inside the certificate repository.
+    pub fn devices_relative_path(&self) -> Result<&Path> {
+        let relative = self.devices_file.as_path();
+        if relative.as_os_str().is_empty() {
+            return Err(Error::Config(
+                "devices_file is empty. Use a relative path such as devices.txt".into(),
+            ));
+        }
+        if relative.is_absolute()
+            || relative
+                .components()
+                .any(|component| matches!(component, std::path::Component::ParentDir))
+        {
+            return Err(Error::Config(format!(
+                "devices_file {} must stay inside the certificate repository",
+                relative.display()
+            )));
+        }
+        Ok(relative)
+    }
+
     pub fn password_from_env() -> Result<String> {
         match std::env::var(PASSWORD_ENV) {
             Ok(value) if !value.is_empty() => Ok(value),
@@ -379,6 +402,10 @@ impl Config {
             ))),
         }
     }
+}
+
+fn default_devices_file() -> PathBuf {
+    PathBuf::from("devices.txt")
 }
 
 fn default_branch() -> String {

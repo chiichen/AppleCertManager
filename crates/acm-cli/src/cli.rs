@@ -32,11 +32,11 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Write acm.toml and a sample devices.txt.
+    /// Write acm.toml and a sample devices.txt in the certificate repository.
     Init {
         #[arg(long, default_value = "acm.toml")]
         config: PathBuf,
-        /// Replace an existing acm.toml and devices.txt.
+        /// Replace an existing acm.toml and the certificate repository's devices.txt.
         #[arg(long)]
         force: bool,
     },
@@ -184,17 +184,29 @@ fn cmd_init(config_path: &Path, force: bool) -> Result<()> {
         }
     }
     fs::write(config_path, SAMPLE_CONFIG)?;
-    let devices_path = config_path
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."))
-        .join("devices.txt");
-    if !devices_path.exists() || force {
-        fs::write(&devices_path, SAMPLE_DEVICES)?;
-    }
+    let config = Config::load(config_path)?;
     println!("wrote {}", config_path.display());
-    println!("wrote {}", devices_path.display());
+    seed_devices(&config, force)?;
     println!("export MATCH_PASSWORD before acm sync. The passphrase is not stored in acm.toml.");
+    Ok(())
+}
+
+fn seed_devices(config: &Config, force: bool) -> Result<()> {
+    let relative = config.devices_relative_path()?.to_path_buf();
+    let mut repo = Repo::from_config(config)?;
+    let storage = repo.description();
+    let work = repo.open()?;
+    let dest = work.join(&relative);
+    if dest.exists() && !force {
+        println!("{} already in {storage}", relative.display());
+        return Ok(());
+    }
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(&dest, SAMPLE_DEVICES)?;
+    repo.commit("Add devices.txt")?;
+    println!("wrote {} in {storage}", relative.display());
     Ok(())
 }
 
@@ -216,10 +228,17 @@ fn cmd_sync(args: SyncArgs) -> Result<()> {
         config.sync.force_legacy_encryption = true;
     }
     let password = Config::password_from_env()?;
-    let devices = load_devices(&config)?;
-    let plan = SyncPlan::from_config(&config, devices);
     let mut repo = Repo::from_config(&config)?;
     println!("storage: {}", repo.description());
+    let work = repo.open()?;
+    crypto::decrypt_tree(&work, &password)?;
+    let devices = load_devices(&config, &work)?;
+    println!(
+        "devices: {} in {}",
+        devices.len(),
+        config.devices_relative_path()?.display()
+    );
+    let plan = SyncPlan::from_config(&config, devices);
     let client = if plan.readonly {
         None
     } else {
@@ -455,26 +474,31 @@ fn apple_check(config: &Config) -> Result<String> {
 }
 
 fn devices_check(config: &Config) -> Result<String> {
-    match load_devices(config) {
-        Ok(devices) => Ok(format!("{} device{}", devices.len(), plural(devices.len()))),
-        Err(err) => Err(err),
-    }
+    let mut repo = Repo::from_config(config)?;
+    let work = repo.open()?;
+    let relative = config.devices_relative_path()?;
+    let devices = load_devices(config, &work)?;
+    Ok(format!(
+        "{} device{} in {}",
+        devices.len(),
+        plural(devices.len()),
+        relative.display()
+    ))
 }
 
-fn load_devices(config: &Config) -> Result<Vec<DeviceRecord>> {
-    let Some(path) = &config.devices_file else {
-        return Ok(Vec::new());
-    };
-    if !path.exists() {
+fn load_devices(config: &Config, repo_root: &Path) -> Result<Vec<DeviceRecord>> {
+    let relative = config.devices_relative_path()?;
+    let path = repo_root.join(relative);
+    if !path.is_file() {
         if config.sync.readonly {
             return Ok(Vec::new());
         }
         return Err(Error::msg(format!(
-            "device list {} does not exist",
-            path.display()
+            "device list {} does not exist in the certificate repository",
+            relative.display()
         )));
     }
-    devices::load_devices(path)
+    devices::load_devices(&path)
 }
 
 fn keychain_check(config: &Config) -> (bool, String) {
