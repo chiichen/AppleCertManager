@@ -15,6 +15,10 @@ pub enum Error {
     Toml(#[from] toml::de::Error),
     #[error("encryption failed: {0}")]
     Crypto(String),
+    #[error("storage error: {0}")]
+    Storage(String),
+    #[error("http request failed: {0}")]
+    Http(#[from] reqwest::Error),
     #[error("command `{command}` failed ({status}): {stderr}")]
     Command {
         command: String,

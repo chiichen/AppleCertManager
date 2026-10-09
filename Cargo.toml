@@ -12,10 +12,13 @@ path = "src/main.rs"
 
 [dependencies]
 base64 = "0.22"
+chrono = "0.4"
+hex = "0.4"
+hmac = "0.12"
 openssl = "0.10"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+tempfile = "3"
 thiserror = "1"
 toml = "0.8"
-
-[dev-dependencies]
-tempfile = "3"
