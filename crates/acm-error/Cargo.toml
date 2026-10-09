@@ -1,0 +1,14 @@
+[package]
+name = "acm-error"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Shared errors for the Apple certificate manager"
+
+[dependencies]
+jsonwebtoken.workspace = true
+openssl.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+toml.workspace = true

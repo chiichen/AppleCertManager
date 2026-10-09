@@ -1,0 +1,16 @@
+[package]
+name = "acm-storage"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Local, Git, and S3 certificate repositories"
+
+[dependencies]
+acm-config.workspace = true
+acm-error.workspace = true
+chrono.workspace = true
+hex.workspace = true
+hmac.workspace = true
+reqwest.workspace = true
+sha2.workspace = true
+tempfile.workspace = true

@@ -1,0 +1,21 @@
+[package]
+name = "acm-install"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Install identities and provisioning profiles on the signing machine"
+
+[dependencies]
+acm-config.workspace = true
+acm-engine.workspace = true
+acm-error.workspace = true
+acm-signing.workspace = true
+acm-types.workspace = true
+hex.workspace = true
+plist.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation.workspace = true
+core-foundation-sys.workspace = true
+security-framework.workspace = true
+security-framework-sys.workspace = true

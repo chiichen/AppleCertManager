@@ -82,9 +82,25 @@ acm decrypt ./certs
 
 ## 开发
 
-```bash
-cargo test
-cargo build
+仓库是 Cargo workspace。各模块是独立的库 crate，命令行由 `acm-cli` 组合这些库，二进制名仍是 `acm`。
+
+```text
+crates/acm-error      统一错误类型
+crates/acm-types      签名类型、平台、match 路径和 sigh 名称
+crates/acm-crypto     match v1/v2 加解密和证书检查
+crates/acm-devices    devices.txt 解析
+crates/acm-config     acm.toml 和环境变量
+crates/acm-storage    本地、Git、S3 存储
+crates/acm-portal     App Store Connect API
+crates/acm-engine     sync、nuke、import、migrate、改口令
+crates/acm-signing    signing.env、xcconfig、ExportOptions
+crates/acm-install    描述文件安装和 macOS 钥匙串
+crates/acm-cli        acm 命令，组合上面的库
 ```
 
-需要 Rust 1.88 或更新版本，以及 OpenSSL 头文件。macOS 钥匙串代码只在 `target_os = "macos"` 下编译。
+```bash
+cargo test --workspace
+cargo build --workspace --release
+```
+
+需要 Rust 1.88 或更新版本，以及 OpenSSL 头文件。macOS 钥匙串代码只在 `target_os = "macos"` 下编译。发布二进制在 `target/release/acm`。

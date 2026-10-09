@@ -1,34 +1,53 @@
-[package]
-name = "apple-cert-manager"
+[workspace]
+resolver = "2"
+members = [
+    "crates/acm-error",
+    "crates/acm-types",
+    "crates/acm-crypto",
+    "crates/acm-devices",
+    "crates/acm-config",
+    "crates/acm-storage",
+    "crates/acm-portal",
+    "crates/acm-engine",
+    "crates/acm-signing",
+    "crates/acm-install",
+    "crates/acm-cli",
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.88"
 description = "One-command Apple certificate manager compatible with fastlane match"
 readme = "README.md"
-rust-version = "1.88"
 
-[[bin]]
-name = "acm"
-path = "src/main.rs"
-
-[dependencies]
+[workspace.dependencies]
+acm-error = { path = "crates/acm-error" }
+acm-types = { path = "crates/acm-types" }
+acm-crypto = { path = "crates/acm-crypto" }
+acm-devices = { path = "crates/acm-devices" }
+acm-config = { path = "crates/acm-config" }
+acm-storage = { path = "crates/acm-storage" }
+acm-portal = { path = "crates/acm-portal" }
+acm-engine = { path = "crates/acm-engine" }
+acm-signing = { path = "crates/acm-signing" }
+acm-install = { path = "crates/acm-install" }
 base64 = "0.22"
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
+core-foundation = "0.10"
+core-foundation-sys = "0.8"
 hex = "0.4"
 hmac = "0.12"
 jsonwebtoken = "9"
 openssl = "0.10"
 plist = "1"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+security-framework = "3.7"
+security-framework-sys = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
 tempfile = "3"
 thiserror = "1"
 toml = "0.8"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-core-foundation = "0.10"
-core-foundation-sys = "0.8"
-security-framework = "3.7"
-security-framework-sys = "2"
