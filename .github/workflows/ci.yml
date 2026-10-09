@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    name: fmt, build, test, clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@1.99.0
+        with:
+          components: rustfmt, clippy
+
+      - name: Install OpenSSL
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Cargo build
+        run: cargo build --all-targets
+
+      - name: Cargo test
+        run: cargo test --all-targets
+
+      - name: Cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings

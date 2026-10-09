@@ -122,7 +122,7 @@ impl S3StorageConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AppleConfig {
     #[serde(default)]
@@ -138,19 +138,6 @@ pub struct AppleConfig {
     /// PEM loaded from the environment. Ignored if present in the toml file.
     #[serde(skip)]
     pub key_pem: Option<Vec<u8>>,
-}
-
-impl Default for AppleConfig {
-    fn default() -> Self {
-        Self {
-            key_id: String::new(),
-            issuer_id: String::new(),
-            key_path: None,
-            team_id: String::new(),
-            in_house: false,
-            key_pem: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -423,8 +423,7 @@ impl<'a, P: Portal> Session<'a, P> {
             None
         };
         let refresh = self.profile_needs_refresh(signing, platform, existing.as_ref())?;
-        if existing.is_some() && !refresh {
-            let parsed = existing.unwrap();
+        if let Some(parsed) = existing.filter(|_| !refresh) {
             self.report.profiles.push(synced_profile(
                 app,
                 platform,
