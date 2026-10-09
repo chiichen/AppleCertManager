@@ -127,7 +127,7 @@ fn certificate_and_p12_roundtrip() {
     let path = dir.path().join("id.p12");
     std::fs::write(&path, &p12).unwrap();
     let output = std::process::Command::new("openssl")
-        .args(["pkcs12", "-in"])
+        .args(["pkcs12", "-legacy", "-in"])
         .arg(&path)
         .args(["-nokeys", "-passin", "pass:", "-clcerts"])
         .output()
@@ -143,7 +143,7 @@ fn certificate_and_p12_roundtrip() {
     let info = std::process::Command::new("openssl")
         .args(["pkcs12", "-in"])
         .arg(&path)
-        .args(["-info", "-noout", "-passin", "pass:"])
+        .args(["-legacy", "-info", "-noout", "-passin", "pass:"])
         .output()
         .unwrap();
     assert!(
@@ -162,6 +162,10 @@ fn certificate_and_p12_roundtrip() {
     );
     assert!(
         details.contains("TripleDES") || details.to_ascii_lowercase().contains("3des"),
-        "macOS Security.framework needs 3DES, got {details}"
+        "macOS Security.framework needs 3DES for the key, got {details}"
+    );
+    assert!(
+        details.to_ascii_lowercase().contains("rc2"),
+        "macOS Security.framework needs RC2-40 for the certificate, got {details}"
     );
 }
