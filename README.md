@@ -2,7 +2,7 @@
 
 用一条命令管理 Apple 签名证书和描述文件。仓库布局、加密格式和 `sigh_*` 环境变量与 fastlane match 兼容，实现是 Rust 命令 `acm`。
 
-`acm sync` 会读取 `devices.txt`，在 App Store Connect 上登记设备、创建 Bundle ID、证书和描述文件，把它们加密后写入存储，再生成 Xcode 可以直接使用的签名文件。在 macOS 上，同一条命令通过 Security.framework 把证书导入钥匙串，并把描述文件装进 Xcode。
+`acm sync` 会读取证书仓库里的 `devices.txt`，在 App Store Connect 上登记设备、创建 Bundle ID、证书和描述文件，把它们加密后写入存储，再生成 Xcode 可以直接使用的签名文件。在 macOS 上，同一条命令通过 Security.framework 把证书导入钥匙串，并把描述文件装进 Xcode。
 
 ## 准备
 
@@ -17,7 +17,7 @@ export MATCH_PASSWORD='仓库加密口令'
 acm init
 ```
 
-这会生成 `acm.toml` 和带注释的 `devices.txt`。按团队信息改 `acm.toml`，把设备按下面的格式写进 `devices.txt`（制表符、逗号或空白都可以，表头可省略）：
+这会在当前目录生成 `acm.toml`，并在证书仓库里写入 `devices.txt`。示例配置的证书仓库是本地目录 `./certs`，所以设备文件在 `./certs/devices.txt`。按团队信息改 `acm.toml`，把设备按下面的格式写进证书仓库里的 `devices.txt`（制表符、逗号或空白都可以，表头可省略）：
 
 ```text
 Device ID	Device Name	Device Platform
@@ -41,7 +41,7 @@ acm sync
 
 `acm sync` 会：
 
-1. 把 `devices.txt` 里还没有的设备登记到开发者门户。
+1. 读取证书仓库里的 `devices.txt`，把还没有的设备登记到开发者门户。文件和 `certs/`、`profiles/` 放在同一套 local、git 或 s3 存储里，以明文保存。
 2. 创建缺少的 Bundle ID、证书和描述文件。Ad Hoc 与 App Store 共用 `certs/distribution` 里的发布证书。
 3. 用 match v2（`match_encrypted_v2__`，AES-256-GCM）加密后写入存储。已有的 match v1 `Salted__` 文件仍能解密。
 4. 在 `signing/` 下写出 `signing.env`、每个 lane 的 `Signing.xcconfig` 和 `ExportOptions.plist`。

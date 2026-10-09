@@ -36,7 +36,8 @@ fn init_doctor_encrypt_and_readonly_sync() {
     let (ok, text) = output(acm(root).arg("init"));
     assert!(ok, "{text}");
     assert!(root.join("acm.toml").is_file());
-    assert!(root.join("devices.txt").is_file());
+    assert!(!root.join("devices.txt").exists());
+    assert!(root.join("certs/devices.txt").is_file());
     assert!(fs::read_to_string(root.join("acm.toml"))
         .unwrap()
         .contains("MATCH_PASSWORD"));
@@ -50,7 +51,22 @@ fn init_doctor_encrypt_and_readonly_sync() {
     let (ok, text) = output(acm(root).args(["doctor"]).env("MATCH_PASSWORD", "secret"));
     assert!(ok, "{text}");
     assert!(text.contains("MATCH_PASSWORD is set"));
+    assert!(text.contains("0 devices in devices.txt"));
     assert!(text.contains("Security.framework"));
+
+    fs::write(
+        root.join("devices.txt"),
+        "00008030001C25E40A68802E\tApp repo iPhone\tios\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("certs/devices.txt"),
+        "00008030001C25E40A68802F\tCert repo iPhone\tios\n",
+    )
+    .unwrap();
+    let (ok, text) = output(acm(root).args(["doctor"]).env("MATCH_PASSWORD", "secret"));
+    assert!(ok, "{text}");
+    assert!(text.contains("1 device in devices.txt"));
 
     fs::write(root.join("plain.cer"), b"certificate-bytes").unwrap();
     let (ok, text) = output(

@@ -22,6 +22,10 @@ fn sample_config_parses() {
             SigningType::AppStore
         ]
     );
+    assert_eq!(
+        config.devices_relative_path().unwrap(),
+        std::path::Path::new("devices.txt")
+    );
     assert!(config.sync.force_for_new_devices);
     assert!(config.sync.renew_expired);
     assert!(!config.sync.readonly);
@@ -68,6 +72,15 @@ fn git_branch_override_applies_when_git_section_exists() {
     config.apply_env();
     assert_eq!(config.git.as_ref().unwrap().branch, "certificates");
     restore(&previous);
+}
+
+#[test]
+fn devices_file_must_stay_inside_the_certificate_repository() {
+    let mut config = Config::parse(SAMPLE_CONFIG).unwrap();
+    config.devices_file = std::path::PathBuf::from("/tmp/devices.txt");
+    assert!(config.devices_relative_path().is_err());
+    config.devices_file = std::path::PathBuf::from("../devices.txt");
+    assert!(config.devices_relative_path().is_err());
 }
 
 #[test]
