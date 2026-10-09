@@ -39,19 +39,20 @@ impl KeyMaterial {
     /// then encrypts the file with `MATCH_PASSWORD`.
     ///
     /// OpenSSL 3 encrypts new archives with PBES2 AES-256 and a SHA-256 MAC.
-    /// `SecPKCS12Import` rejects that as a wrong passphrase. The SHA-1 / 3DES
-    /// algorithms are what `openssl pkcs12 -legacy` emits and what the macOS
-    /// keychain imports.
+    /// `SecPKCS12Import` reports that as a wrong passphrase. `openssl pkcs12
+    /// -legacy` uses a SHA-1 MAC, 3DES for the key, and RC2-40 for the
+    /// certificate. RC2-40 is in OpenSSL's legacy provider.
     pub fn export_p12(&self, certificate: &[u8], password: &str) -> Result<Vec<u8>> {
         let pkey = self.pkey()?;
         let cert = parse_certificate(certificate)?;
+        ensure_legacy_provider()?;
         let mut builder = Pkcs12::builder();
         builder
             .name("apple-cert-manager")
             .pkey(&pkey)
             .cert(&cert)
             .key_algorithm(Nid::PBE_WITHSHA1AND3_KEY_TRIPLEDES_CBC)
-            .cert_algorithm(Nid::PBE_WITHSHA1AND3_KEY_TRIPLEDES_CBC)
+            .cert_algorithm(Nid::PBE_WITHSHA1AND40BITRC2_CBC)
             .mac_md(MessageDigest::sha1());
         let p12 = builder.build2(password)?;
         Ok(p12.to_der()?)
@@ -60,6 +61,18 @@ impl KeyMaterial {
     fn pkey(&self) -> Result<PKey<Private>> {
         Ok(PKey::private_key_from_pem(&self.pem)?)
     }
+}
+
+fn ensure_legacy_provider() -> Result<()> {
+    use std::sync::OnceLock;
+
+    static LEGACY: OnceLock<openssl::provider::Provider> = OnceLock::new();
+    if LEGACY.get().is_some() {
+        return Ok(());
+    }
+    let provider = openssl::provider::Provider::try_load(None, "legacy", true)?;
+    let _ = LEGACY.set(provider);
+    Ok(())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
