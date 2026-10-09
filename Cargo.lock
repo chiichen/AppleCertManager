@@ -142,6 +142,7 @@ name = "apple-cert-manager-install"
 version = "0.1.0"
 dependencies = [
  "apple-cert-manager-config",
+ "apple-cert-manager-crypto",
  "apple-cert-manager-engine",
  "apple-cert-manager-error",
  "apple-cert-manager-signing",
