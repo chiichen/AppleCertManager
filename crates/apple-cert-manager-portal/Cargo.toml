@@ -1,0 +1,20 @@
+[package]
+name = "apple-cert-manager-portal"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "App Store Connect client"
+
+[dependencies]
+apple-cert-manager-config.workspace = true
+apple-cert-manager-error.workspace = true
+base64.workspace = true
+chrono.workspace = true
+jsonwebtoken.workspace = true
+openssl.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+apple-cert-manager-crypto.workspace = true
