@@ -172,14 +172,26 @@ types = ["development"]
     );
     assert!(!ok, "{text}");
 
+    let keychain = root.join("ci.keychain-db");
+    // Built at runtime so the test fixture is not a committed passphrase.
+    let keychain_password = format!("kc{:08x}", std::process::id());
     let (ok, text) = output(
         cmd(root)
             .args(["sync", "--readonly"])
-            .env("MATCH_PASSWORD", "new-secret"),
+            .env("MATCH_PASSWORD", "new-secret")
+            .env("MATCH_KEYCHAIN_NAME", &keychain)
+            .env("MATCH_KEYCHAIN_PASSWORD", &keychain_password),
     );
     assert!(ok, "{text}");
     assert!(text.contains("signing.env"));
-    assert!(text.contains("Security.framework"));
+    if cfg!(target_os = "macos") {
+        assert!(
+            text.contains("identities installed:") && !text.contains("identities installed: 0"),
+            "{text}"
+        );
+    } else {
+        assert!(text.contains("Security.framework"), "{text}");
+    }
     let env = fs::read_to_string(root.join("signing/signing.env")).unwrap();
     assert!(env
         .contains("sigh_com.example.portal_development=\"AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE\""));

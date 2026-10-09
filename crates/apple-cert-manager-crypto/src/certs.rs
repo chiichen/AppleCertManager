@@ -37,11 +37,22 @@ impl KeyMaterial {
 
     /// Build a PKCS#12 archive. Match stores these with an empty password and
     /// then encrypts the file with `MATCH_PASSWORD`.
+    ///
+    /// OpenSSL 3 encrypts new archives with PBES2 AES-256 and a SHA-256 MAC.
+    /// `SecPKCS12Import` rejects that as a wrong passphrase. The SHA-1 / 3DES
+    /// algorithms are what `openssl pkcs12 -legacy` emits and what the macOS
+    /// keychain imports.
     pub fn export_p12(&self, certificate: &[u8], password: &str) -> Result<Vec<u8>> {
         let pkey = self.pkey()?;
         let cert = parse_certificate(certificate)?;
         let mut builder = Pkcs12::builder();
-        builder.name("apple-cert-manager").pkey(&pkey).cert(&cert);
+        builder
+            .name("apple-cert-manager")
+            .pkey(&pkey)
+            .cert(&cert)
+            .key_algorithm(Nid::PBE_WITHSHA1AND3_KEY_TRIPLEDES_CBC)
+            .cert_algorithm(Nid::PBE_WITHSHA1AND3_KEY_TRIPLEDES_CBC)
+            .mac_md(MessageDigest::sha1());
         let p12 = builder.build2(password)?;
         Ok(p12.to_der()?)
     }

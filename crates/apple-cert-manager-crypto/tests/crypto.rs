@@ -139,4 +139,29 @@ fn certificate_and_p12_roundtrip() {
     );
     let pem = String::from_utf8_lossy(&output.stdout);
     assert!(pem.contains("BEGIN CERTIFICATE"));
+
+    let info = std::process::Command::new("openssl")
+        .args(["pkcs12", "-in"])
+        .arg(&path)
+        .args(["-info", "-noout", "-passin", "pass:"])
+        .output()
+        .unwrap();
+    assert!(
+        info.status.success(),
+        "{}",
+        String::from_utf8_lossy(&info.stderr)
+    );
+    let details = format!(
+        "{}{}",
+        String::from_utf8_lossy(&info.stdout),
+        String::from_utf8_lossy(&info.stderr)
+    );
+    assert!(
+        details.to_ascii_lowercase().contains("sha1"),
+        "macOS Security.framework needs a SHA-1 MAC, got {details}"
+    );
+    assert!(
+        details.contains("TripleDES") || details.to_ascii_lowercase().contains("3des"),
+        "macOS Security.framework needs 3DES, got {details}"
+    );
 }
