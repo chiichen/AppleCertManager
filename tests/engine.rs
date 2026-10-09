@@ -214,10 +214,10 @@ fn import_password_change_and_migrate_roundtrip() {
     .is_err());
 }
 
-fn profile<'a>(
-    report: &'a apple_cert_manager::engine::SyncReport,
+fn profile(
+    report: &apple_cert_manager::engine::SyncReport,
     signing: SigningType,
-) -> &'a apple_cert_manager::engine::SyncedProfile {
+) -> &apple_cert_manager::engine::SyncedProfile {
     report
         .profiles
         .iter()
