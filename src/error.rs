@@ -19,6 +19,12 @@ pub enum Error {
     Storage(String),
     #[error("http request failed: {0}")]
     Http(#[from] reqwest::Error),
+    #[error("Apple API error: {0}")]
+    Portal(String),
+    #[error("failed to parse JSON: {0}")]
+    Json(#[from] serde_json::Error),
+    #[error("failed to create App Store Connect token: {0}")]
+    Jwt(#[from] jsonwebtoken::errors::Error),
     #[error("command `{command}` failed ({status}): {stderr}")]
     Command {
         command: String,
