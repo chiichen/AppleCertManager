@@ -103,4 +103,6 @@ cargo test --workspace
 cargo build --workspace --release
 ```
 
-需要 Rust 1.88 或更新版本，以及 OpenSSL 头文件。macOS 钥匙串代码只在 `target_os = "macos"` 下编译。发布二进制在 `target/release/apple-cert-manager`。
+需要 Rust 1.88 或更新版本。OpenSSL 随依赖从源码编译，互操作测试还会调用系统里的 `openssl` 命令。macOS 钥匙串代码只在目标系统是 macOS 时编译。发布二进制在 `target/release/apple-cert-manager`。
+
+CI 在 Linux、macOS 和 Windows 上分别编译并测试各自的本机目标。

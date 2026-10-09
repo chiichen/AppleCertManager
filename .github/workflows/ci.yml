@@ -4,6 +4,7 @@ on:
   push:
   pull_request:
 
+# Each runner builds and tests this workspace for its own operating system.
 jobs:
   ci:
     name: fmt, build, test, clippy
@@ -15,8 +16,8 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - name: Install OpenSSL
-        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+      - name: Install OpenSSL CLI
+        run: sudo apt-get update && sudo apt-get install -y openssl
 
       - name: Cargo fmt
         run: cargo fmt --all -- --check
@@ -29,3 +30,32 @@ jobs:
 
       - name: Cargo clippy
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@1.99.0
+
+      - name: Install OpenSSL CLI (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install openssl@3
+          echo "$(brew --prefix openssl@3)/bin" >> "$GITHUB_PATH"
+
+      - name: Install Perl and OpenSSL CLI (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install strawberryperl openssl --yes --no-progress
+          "C:\Strawberry\perl\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          "C:\Program Files\OpenSSL-Win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+
+      - name: Cargo test
+        run: cargo test --workspace --all-targets
