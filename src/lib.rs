@@ -7,7 +7,9 @@
 
 pub mod config;
 pub mod crypto;
+pub mod devices;
 pub mod error;
+pub mod portal;
 pub mod storage;
 pub mod types;
 
