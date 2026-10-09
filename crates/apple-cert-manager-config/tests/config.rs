@@ -81,6 +81,28 @@ fn devices_file_must_stay_inside_the_certificate_repository() {
     assert!(config.devices_relative_path().is_err());
     config.devices_file = std::path::PathBuf::from("../devices.txt");
     assert!(config.devices_relative_path().is_err());
+    config.devices_file = std::path::PathBuf::from("team/devices.txt");
+    assert_eq!(
+        config.devices_relative_path().unwrap(),
+        std::path::Path::new("team/devices.txt")
+    );
+}
+
+#[cfg(windows)]
+#[test]
+fn windows_drive_and_root_devices_paths_are_rejected() {
+    let mut config = Config::parse(SAMPLE_CONFIG).unwrap();
+    for path in [
+        r"C:\devices.txt",
+        r"\devices.txt",
+        r"\\server\share\devices.txt",
+    ] {
+        config.devices_file = std::path::PathBuf::from(path);
+        assert!(
+            config.devices_relative_path().is_err(),
+            "{path} must stay inside the certificate repository"
+        );
+    }
 }
 
 #[test]

@@ -380,11 +380,15 @@ impl Config {
                 "devices_file is empty. Use a relative path such as devices.txt".into(),
             ));
         }
-        if relative.is_absolute()
-            || relative
-                .components()
-                .any(|component| matches!(component, std::path::Component::ParentDir))
-        {
+        // `Path::is_absolute` is false for `/tmp/devices.txt` on Windows, but
+        // `Path::push` still treats a root or a drive prefix as a new base.
+        let confined = relative.components().all(|component| {
+            matches!(
+                component,
+                std::path::Component::Normal(_) | std::path::Component::CurDir
+            )
+        });
+        if !confined {
             return Err(Error::Config(format!(
                 "devices_file {} must stay inside the certificate repository",
                 relative.display()
