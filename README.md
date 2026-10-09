@@ -105,4 +105,4 @@ cargo build --workspace --release
 
 需要 Rust 1.88 或更新版本。OpenSSL 随依赖从源码编译，互操作测试还会调用系统里的 `openssl` 命令。读取 RC2 的 PKCS#12 需要 legacy provider。Windows 上常见的 Win64 安装把 `legacy.dll` 放在 `openssl.exe` 旁边，而程序默认到 `C:\Program Files\OpenSSL\lib\ossl-modules` 查找，这时要设置 `OPENSSL_MODULES`。macOS 钥匙串代码只在目标系统是 macOS 时编译。发布二进制在 `target/release/apple-cert-manager`。
 
-CI 在 Linux、macOS 和 Windows 上分别编译并测试各自的本机目标。
+CI 在 Linux、macOS 和 Windows 上跑同一套检查：`cargo fmt`、`cargo build`、`cargo test`、`cargo clippy`。

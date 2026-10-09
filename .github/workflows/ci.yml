@@ -4,11 +4,15 @@ on:
   push:
   pull_request:
 
-# Each runner builds and tests this workspace for its own operating system.
+# Linux, macOS, and Windows run the same checks for their own target.
 jobs:
   ci:
-    name: fmt, build, test, clippy
-    runs-on: ubuntu-latest
+    name: ci (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -16,32 +20,9 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - name: Install OpenSSL CLI
+      - name: Install OpenSSL CLI (Linux)
+        if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y openssl
-
-      - name: Cargo fmt
-        run: cargo fmt --all -- --check
-
-      - name: Cargo build
-        run: cargo build --workspace --all-targets
-
-      - name: Cargo test
-        run: cargo test --workspace --all-targets
-
-      - name: Cargo clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-
-  test:
-    name: test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@1.99.0
 
       - name: Install OpenSSL CLI (macOS)
         if: runner.os == 'macOS'
@@ -83,5 +64,14 @@ jobs:
           "OPENSSL_MODULES=$modules" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "OPENSSL_MODULES=$modules"
 
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Cargo build
+        run: cargo build --workspace --all-targets
+
       - name: Cargo test
         run: cargo test --workspace --all-targets
+
+      - name: Cargo clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
