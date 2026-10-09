@@ -51,7 +51,13 @@ fn sync_registers_devices_and_refreshes_only_device_profiles() {
     let phone = "00008030-001C25E40A68802E";
     let devices = vec![device("Front Desk", phone)];
     let mut repo = Repo::Local(LocalRepo::new(root.clone()));
-    let report = sync(&mut repo, Some(&portal), "secret", &plan(devices.clone(), false)).unwrap();
+    let report = sync(
+        &mut repo,
+        Some(&portal),
+        "secret",
+        &plan(devices.clone(), false),
+    )
+    .unwrap();
 
     assert_eq!(report.registered_devices, 1);
     assert_eq!(report.created_bundle_ids, 1);
@@ -89,8 +95,14 @@ fn sync_registers_devices_and_refreshes_only_device_profiles() {
     assert_eq!(refreshed.registered_devices, 1);
     assert_eq!(refreshed.created_certificates, 0);
     assert_eq!(refreshed.created_profiles, 2);
-    assert_ne!(profile(&refreshed, SigningType::Development).uuid, development.uuid);
-    assert_eq!(profile(&refreshed, SigningType::AppStore).uuid, appstore.uuid);
+    assert_ne!(
+        profile(&refreshed, SigningType::Development).uuid,
+        development.uuid
+    );
+    assert_eq!(
+        profile(&refreshed, SigningType::AppStore).uuid,
+        appstore.uuid
+    );
     assert!(text(profile(&refreshed, SigningType::AdHoc)).contains(pad));
 }
 
@@ -151,13 +163,7 @@ fn readonly_does_not_create_missing_material() {
     let dir = tempfile::tempdir().unwrap();
     let portal = FakePortal::new("TEAMID1234").unwrap();
     let mut repo = Repo::Local(LocalRepo::new(dir.path().join("certs")));
-    let error = sync(
-        &mut repo,
-        Some(&portal),
-        "secret",
-        &plan(Vec::new(), true),
-    )
-    .unwrap_err();
+    let error = sync(&mut repo, Some(&portal), "secret", &plan(Vec::new(), true)).unwrap_err();
     assert!(error.to_string().contains("readonly"), "{error}");
     assert!(portal.list_certificates().unwrap().is_empty());
 }

@@ -10,7 +10,9 @@ pub mod crypto;
 pub mod devices;
 pub mod engine;
 pub mod error;
+pub mod install;
 pub mod portal;
+pub mod signing;
 pub mod storage;
 pub mod types;
 

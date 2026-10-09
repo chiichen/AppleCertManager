@@ -1,3 +1,8 @@
+mod cli;
+
 fn main() {
-    println!("acm {}", env!("CARGO_PKG_VERSION"));
+    if let Err(err) = cli::run() {
+        eprintln!("acm: {err}");
+        std::process::exit(1);
+    }
 }
