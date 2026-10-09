@@ -55,7 +55,33 @@ jobs:
         run: |
           choco install strawberryperl openssl --yes --no-progress
           "C:\Strawberry\perl\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-          "C:\Program Files\OpenSSL-Win64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          $roots = @(
+            "C:\Program Files\OpenSSL-Win64",
+            "C:\Program Files\OpenSSL"
+          )
+          $bin = $roots |
+            ForEach-Object { Join-Path $_ "bin" } |
+            Where-Object { Test-Path (Join-Path $_ "openssl.exe") } |
+            Select-Object -First 1
+          if (-not $bin) { throw "openssl.exe was not installed" }
+          $bin | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          # The Win64 build still looks for providers in
+          # C:\Program Files\OpenSSL\lib\ossl-modules. legacy.dll is installed
+          # beside openssl.exe, or under the install tree's lib\ossl-modules.
+          $legacy = $roots | ForEach-Object {
+            @(
+              (Join-Path $_ "bin\legacy.dll"),
+              (Join-Path $_ "lib\ossl-modules\legacy.dll")
+            )
+          } | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $legacy) {
+            Get-ChildItem "C:\Program Files" -Filter legacy.dll -Recurse -ErrorAction SilentlyContinue |
+              ForEach-Object { $_.FullName }
+            throw "OpenSSL legacy.dll was not installed"
+          }
+          $modules = Split-Path $legacy
+          "OPENSSL_MODULES=$modules" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "OPENSSL_MODULES=$modules"
 
       - name: Cargo test
         run: cargo test --workspace --all-targets

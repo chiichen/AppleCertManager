@@ -48,7 +48,7 @@ fn v1_matches_openssl_command() {
     let ours =
         encrypt_with_salt(plain, "test-password", EncryptionVersion::V1, &salt_bytes).unwrap();
     std::fs::write(&ours_path, &ours).unwrap();
-    let status = std::process::Command::new("openssl")
+    let status = openssl()
         .args([
             "enc",
             "-d",
@@ -69,8 +69,39 @@ fn v1_matches_openssl_command() {
     assert_eq!(std::fs::read(&decoded_path).unwrap(), plain);
 }
 
+fn openssl() -> std::process::Command {
+    let mut command = std::process::Command::new("openssl");
+    // The Shining Light Win64 build looks for providers in
+    // C:\Program Files\OpenSSL\lib\ossl-modules, while legacy.dll is installed
+    // next to openssl.exe. OPENSSL_MODULES overrides that compiled-in path.
+    if std::env::var_os("OPENSSL_MODULES").is_none() {
+        if let Some(modules) = legacy_provider_dir() {
+            command.env("OPENSSL_MODULES", modules);
+        }
+    }
+    command
+}
+
+fn legacy_provider_dir() -> Option<std::path::PathBuf> {
+    #[cfg(windows)]
+    {
+        for root in [
+            r"C:\Program Files\OpenSSL-Win64",
+            r"C:\Program Files\OpenSSL",
+        ] {
+            for relative in [r"bin\legacy.dll", r"lib\ossl-modules\legacy.dll"] {
+                let dll = std::path::Path::new(root).join(relative);
+                if dll.is_file() {
+                    return dll.parent().map(std::path::Path::to_path_buf);
+                }
+            }
+        }
+    }
+    None
+}
+
 fn openssl_enc(plain: &std::path::Path, output: &std::path::Path, digest: &str) -> bool {
-    std::process::Command::new("openssl")
+    openssl()
         .args([
             "enc",
             "-aes-256-cbc",
@@ -126,7 +157,7 @@ fn certificate_and_p12_roundtrip() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("id.p12");
     std::fs::write(&path, &p12).unwrap();
-    let output = std::process::Command::new("openssl")
+    let output = openssl()
         .args(["pkcs12", "-legacy", "-in"])
         .arg(&path)
         .args(["-nokeys", "-passin", "pass:", "-clcerts"])
@@ -140,7 +171,7 @@ fn certificate_and_p12_roundtrip() {
     let pem = String::from_utf8_lossy(&output.stdout);
     assert!(pem.contains("BEGIN CERTIFICATE"));
 
-    let info = std::process::Command::new("openssl")
+    let info = openssl()
         .args(["pkcs12", "-in"])
         .arg(&path)
         .args(["-legacy", "-info", "-noout", "-passin", "pass:"])
@@ -181,7 +212,7 @@ fn reprotected_p12_has_a_password_and_3des() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("id.p12");
     std::fs::write(&path, &protected).unwrap();
-    let output = std::process::Command::new("openssl")
+    let output = openssl()
         .args(["pkcs12", "-in"])
         .arg(&path)
         .args(["-nokeys", "-passin"])
@@ -194,7 +225,7 @@ fn reprotected_p12_has_a_password_and_3des() {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let info = std::process::Command::new("openssl")
+    let info = openssl()
         .args(["pkcs12", "-in"])
         .arg(&path)
         .args(["-info", "-noout", "-passin"])
