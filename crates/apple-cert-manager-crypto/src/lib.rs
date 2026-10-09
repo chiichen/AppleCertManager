@@ -7,7 +7,10 @@
 mod certs;
 mod match_crypt;
 
-pub use certs::{inspect_certificate, self_signed_certificate, CertificateInfo, KeyMaterial};
+pub use certs::{
+    inspect_certificate, reprotect_p12_for_keychain, self_signed_certificate, CertificateInfo,
+    KeyMaterial,
+};
 pub use match_crypt::{
     decrypt, decrypt_file, decrypt_tree, encrypt, encrypt_file, encrypt_tree, encrypt_with_salt,
     looks_encrypted, EncryptionVersion,

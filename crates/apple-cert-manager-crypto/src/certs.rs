@@ -2,9 +2,9 @@ use openssl::asn1::Asn1Time;
 use openssl::hash::MessageDigest;
 use openssl::nid::Nid;
 use openssl::pkcs12::Pkcs12;
-use openssl::pkey::{PKey, Private};
+use openssl::pkey::{PKey, PKeyRef, Private};
 use openssl::rsa::Rsa;
-use openssl::x509::{X509NameBuilder, X509ReqBuilder, X509};
+use openssl::x509::{X509NameBuilder, X509Ref, X509ReqBuilder, X509};
 
 use apple_cert_manager_error::Result;
 
@@ -61,6 +61,39 @@ impl KeyMaterial {
     fn pkey(&self) -> Result<PKey<Private>> {
         Ok(PKey::private_key_from_pem(&self.pem)?)
     }
+}
+
+/// Decrypt `bytes` and write a new archive with a random non-empty password.
+///
+/// macOS 15 and later fail the PKCS#12 MAC check when the password is empty,
+/// including `SecKeychainItemImport`. The returned archive uses SHA-1 and
+/// 3DES for both the key and the certificate, which `SecPKCS12Import` accepts
+/// when the password is not empty. The password exists only for that import.
+pub fn reprotect_p12_for_keychain(bytes: &[u8], password: &str) -> Result<(Vec<u8>, String)> {
+    let parsed = Pkcs12::from_der(bytes)?.parse2(password)?;
+    let pkey = parsed
+        .pkey
+        .ok_or_else(|| apple_cert_manager_error::Error::msg("pkcs12 has no private key"))?;
+    let cert = parsed
+        .cert
+        .ok_or_else(|| apple_cert_manager_error::Error::msg("pkcs12 has no certificate"))?;
+    let mut random = [0u8; 16];
+    openssl::rand::rand_bytes(&mut random)?;
+    let new_password = hex::encode(random);
+    let protected = export_keychain_p12(&pkey, &cert, &new_password)?;
+    Ok((protected, new_password))
+}
+
+fn export_keychain_p12(pkey: &PKeyRef<Private>, cert: &X509Ref, password: &str) -> Result<Vec<u8>> {
+    let mut builder = Pkcs12::builder();
+    builder
+        .name("apple-cert-manager")
+        .pkey(pkey)
+        .cert(cert)
+        .key_algorithm(Nid::PBE_WITHSHA1AND3_KEY_TRIPLEDES_CBC)
+        .cert_algorithm(Nid::PBE_WITHSHA1AND3_KEY_TRIPLEDES_CBC)
+        .mac_md(MessageDigest::sha1());
+    Ok(builder.build2(password)?.to_der()?)
 }
 
 fn ensure_legacy_provider() -> Result<()> {

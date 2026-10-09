@@ -1,6 +1,6 @@
 use apple_cert_manager_crypto::{
-    decrypt, encrypt, encrypt_with_salt, inspect_certificate, self_signed_certificate,
-    EncryptionVersion, KeyMaterial,
+    decrypt, encrypt, encrypt_with_salt, inspect_certificate, reprotect_p12_for_keychain,
+    self_signed_certificate, EncryptionVersion, KeyMaterial,
 };
 
 #[test]
@@ -167,5 +167,49 @@ fn certificate_and_p12_roundtrip() {
     assert!(
         details.to_ascii_lowercase().contains("rc2"),
         "macOS Security.framework needs RC2-40 for the certificate, got {details}"
+    );
+}
+
+#[test]
+fn reprotected_p12_has_a_password_and_3des() {
+    let key = KeyMaterial::generate().unwrap();
+    let der = self_signed_certificate(&key, "Apple Development: Test").unwrap();
+    let p12 = key.export_p12(&der, "").unwrap();
+    let (protected, password) = reprotect_p12_for_keychain(&p12, "").unwrap();
+    assert!(!password.is_empty());
+
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("id.p12");
+    std::fs::write(&path, &protected).unwrap();
+    let output = std::process::Command::new("openssl")
+        .args(["pkcs12", "-in"])
+        .arg(&path)
+        .args(["-nokeys", "-passin"])
+        .arg(format!("pass:{password}"))
+        .arg("-clcerts")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let info = std::process::Command::new("openssl")
+        .args(["pkcs12", "-in"])
+        .arg(&path)
+        .args(["-info", "-noout", "-passin"])
+        .arg(format!("pass:{password}"))
+        .output()
+        .unwrap();
+    let details = format!(
+        "{}{}",
+        String::from_utf8_lossy(&info.stdout),
+        String::from_utf8_lossy(&info.stderr)
+    );
+    assert!(info.status.success(), "{details}");
+    assert!(details.to_ascii_lowercase().contains("sha1"), "{details}");
+    assert!(
+        details.contains("TripleDES") || details.to_ascii_lowercase().contains("3des"),
+        "{details}"
     );
 }
