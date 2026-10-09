@@ -103,10 +103,14 @@ fn object_repository_uses_a_prefix_and_deletes_removed_keys() {
 fn config_opens_a_local_repository() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("store");
-    let toml = format!(
-        "storage_mode = \"local\"\n\n[local]\npath = \"{}\"\n",
-        path.display()
+    // A basic TOML string treats `\U` in `C:\Users` as a Unicode escape.
+    // A literal string keeps the Windows path separators.
+    let displayed = path.display().to_string();
+    assert!(
+        !displayed.contains('\''),
+        "temporary path cannot be a TOML literal: {displayed}"
     );
+    let toml = format!("storage_mode = \"local\"\n\n[local]\npath = '{displayed}'\n");
     let config = Config::parse(&toml).unwrap();
     let mut repo = Repo::from_config(&config).unwrap();
     let work = repo.open().unwrap();
