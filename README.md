@@ -1,2 +1,90 @@
 # AppleCertManager
-An alternative of fastlane match. Making cert management easier
+
+用一条命令管理 Apple 签名证书和描述文件。仓库布局、加密格式和 `sigh_*` 环境变量与 fastlane match 兼容，实现是 Rust 命令 `acm`。
+
+`acm sync` 会读取 `devices.txt`，在 App Store Connect 上登记设备、创建 Bundle ID、证书和描述文件，把它们加密后写入存储，再生成 Xcode 可以直接使用的签名文件。在 macOS 上，同一条命令通过 Security.framework 把证书导入钥匙串，并把描述文件装进 Xcode。
+
+## 准备
+
+```bash
+cargo build --release
+export MATCH_PASSWORD='仓库加密口令'
+```
+
+口令只从 `MATCH_PASSWORD` 读取，不会写入 `acm.toml`。Apple 侧只使用 App Store Connect API Key（`.p8`），不使用 Apple ID 密码。
+
+```bash
+acm init
+```
+
+这会生成 `acm.toml` 和带注释的 `devices.txt`。按团队信息改 `acm.toml`，把设备按下面的格式写进 `devices.txt`（制表符、逗号或空白都可以，表头可省略）：
+
+```text
+Device ID	Device Name	Device Platform
+00008030-001C25E40A68802E	前台 iPhone	ios
+```
+
+API Key 也可以用环境变量，不放进配置文件：
+
+- `APP_STORE_CONNECT_API_KEY_KEY_ID` 或 `ASC_KEY_ID`
+- `APP_STORE_CONNECT_API_KEY_ISSUER_ID` 或 `ASC_ISSUER_ID`
+- `APP_STORE_CONNECT_API_KEY_PATH` 或 `ASC_KEY_PATH`
+- `APP_STORE_CONNECT_API_KEY_KEY`（PEM 正文，换行写成 `\n`）
+- `FASTLANE_TEAM_ID` 或 `ACM_TEAM_ID`
+
+## 同步
+
+```bash
+acm doctor
+acm sync
+```
+
+`acm sync` 会：
+
+1. 把 `devices.txt` 里还没有的设备登记到开发者门户。
+2. 创建缺少的 Bundle ID、证书和描述文件。Ad Hoc 与 App Store 共用 `certs/distribution` 里的发布证书。
+3. 用 match v2（`match_encrypted_v2__`，AES-256-GCM）加密后写入存储。已有的 match v1 `Salted__` 文件仍能解密。
+4. 在 `signing/` 下写出 `signing.env`、每个 lane 的 `Signing.xcconfig` 和 `ExportOptions.plist`。
+5. 在 macOS 上把描述文件复制到 Xcode 的 Provisioning Profiles 目录，并用 Security.framework 导入 `.p12`。导入后会给签名私钥写上 `apple-tool:`、`apple:`、`codesign:` 分区，避免 codesign 弹出口令框。分区列表用的是和 `security set-key-partition-list` 相同的 Security.framework 调用。钥匙串口令放在 `MATCH_KEYCHAIN_PASSWORD`。
+
+其他系统会写出同样的签名文件，并跳过钥匙串。`signing.env` 里的 `sigh_*` 变量和 fastlane sigh 一致，可以直接 `source`。
+
+只拉取、不创建：
+
+```bash
+acm sync --readonly
+```
+
+## 存储
+
+`storage_mode` 取 `local`、`git` 或 `s3`。
+
+- 本地目录：`[local] path`
+- Git：系统自带的 `git`，`[git] url` 和 `branch`。也认 `MATCH_GIT_URL`、`MATCH_GIT_BRANCH`
+- S3 / MinIO：`[s3] bucket`、`region`、`endpoint`。设置了 `endpoint` 时默认 path-style。访问密钥默认读 `AWS_ACCESS_KEY_ID` 和 `AWS_SECRET_ACCESS_KEY`
+
+仓库里的路径与 match 相同，例如 `certs/development/<id>.cer`、`certs/distribution/<id>.p12`、`profiles/development/Development_<bundle id>.mobileprovision`。
+
+## 其他命令
+
+```bash
+acm import --type development ./cert.cer ./cert.p12 ./Development_com.example.app.mobileprovision
+acm nuke --type development --yes
+acm change-password          # 新口令放在 MATCH_PASSWORD_NEW
+acm migrate --dest other.toml
+acm encrypt ./certs
+acm decrypt ./certs
+```
+
+`nuke` 会删除该 lane 的证书目录和描述文件，并在 Apple 上吊销对应证书。Ad Hoc 和 App Store 共用发布证书，吊销其中任意一个都会删掉这份发布证书。Developer ID 不能用 API Key 创建，用 `acm import` 放进仓库。
+
+`--legacy` 让新写入的文件使用 match v1 加密。
+
+## 开发
+
+```bash
+cargo test
+cargo build
+```
+
+需要 Rust 1.88 或更新版本，以及 OpenSSL 头文件。macOS 钥匙串代码只在 `target_os = "macos"` 下编译。
