@@ -8,6 +8,7 @@
 pub mod config;
 pub mod crypto;
 pub mod error;
+pub mod storage;
 pub mod types;
 
 pub use error::{Error, Result};
