@@ -1,0 +1,9 @@
+[package]
+name = "apple-cert-manager-devices"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "fastlane devices.txt import"
+
+[dependencies]
+apple-cert-manager-error.workspace = true

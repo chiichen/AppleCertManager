@@ -1,0 +1,19 @@
+[package]
+name = "apple-cert-manager-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Sync, revoke, import, and migrate match repositories"
+
+[dependencies]
+apple-cert-manager-config.workspace = true
+apple-cert-manager-crypto.workspace = true
+apple-cert-manager-devices.workspace = true
+apple-cert-manager-error.workspace = true
+apple-cert-manager-portal.workspace = true
+apple-cert-manager-storage.workspace = true
+apple-cert-manager-types.workspace = true
+plist.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

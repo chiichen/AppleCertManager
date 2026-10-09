@@ -1,0 +1,12 @@
+[package]
+name = "apple-cert-manager-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "acm.toml configuration"
+
+[dependencies]
+apple-cert-manager-error.workspace = true
+apple-cert-manager-types.workspace = true
+serde.workspace = true
+toml.workspace = true

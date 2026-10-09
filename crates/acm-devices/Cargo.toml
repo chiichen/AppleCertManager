@@ -1,9 +1,0 @@
-[package]
-name = "acm-devices"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-description = "fastlane devices.txt import"
-
-[dependencies]
-acm-error.workspace = true

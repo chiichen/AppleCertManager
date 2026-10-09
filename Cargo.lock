@@ -3,148 +3,6 @@
 version = 4
 
 [[package]]
-name = "acm-cli"
-version = "0.1.0"
-dependencies = [
- "acm-config",
- "acm-crypto",
- "acm-devices",
- "acm-engine",
- "acm-error",
- "acm-install",
- "acm-portal",
- "acm-signing",
- "acm-storage",
- "acm-types",
- "base64 0.22.1",
- "clap",
- "tempfile",
-]
-
-[[package]]
-name = "acm-config"
-version = "0.1.0"
-dependencies = [
- "acm-error",
- "acm-types",
- "serde",
- "toml",
-]
-
-[[package]]
-name = "acm-crypto"
-version = "0.1.0"
-dependencies = [
- "acm-error",
- "base64 0.22.1",
- "hex",
- "hmac",
- "openssl",
- "sha2",
- "tempfile",
-]
-
-[[package]]
-name = "acm-devices"
-version = "0.1.0"
-dependencies = [
- "acm-error",
-]
-
-[[package]]
-name = "acm-engine"
-version = "0.1.0"
-dependencies = [
- "acm-config",
- "acm-crypto",
- "acm-devices",
- "acm-error",
- "acm-portal",
- "acm-storage",
- "acm-types",
- "plist",
- "tempfile",
-]
-
-[[package]]
-name = "acm-error"
-version = "0.1.0"
-dependencies = [
- "jsonwebtoken",
- "openssl",
- "reqwest",
- "serde_json",
- "thiserror 1.0.69",
- "toml",
-]
-
-[[package]]
-name = "acm-install"
-version = "0.1.0"
-dependencies = [
- "acm-config",
- "acm-engine",
- "acm-error",
- "acm-signing",
- "acm-types",
- "core-foundation",
- "core-foundation-sys",
- "hex",
- "plist",
- "security-framework",
- "security-framework-sys",
-]
-
-[[package]]
-name = "acm-portal"
-version = "0.1.0"
-dependencies = [
- "acm-config",
- "acm-crypto",
- "acm-error",
- "base64 0.22.1",
- "chrono",
- "jsonwebtoken",
- "openssl",
- "reqwest",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "acm-signing"
-version = "0.1.0"
-dependencies = [
- "acm-engine",
- "acm-error",
- "acm-types",
- "plist",
- "tempfile",
-]
-
-[[package]]
-name = "acm-storage"
-version = "0.1.0"
-dependencies = [
- "acm-config",
- "acm-error",
- "chrono",
- "hex",
- "hmac",
- "reqwest",
- "sha2",
- "tempfile",
-]
-
-[[package]]
-name = "acm-types"
-version = "0.1.0"
-dependencies = [
- "acm-error",
- "serde",
-]
-
-[[package]]
 name = "android_system_properties"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -201,6 +59,148 @@ dependencies = [
  "anstyle",
  "once_cell_polyfill",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "apple-cert-manager"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-config",
+ "apple-cert-manager-crypto",
+ "apple-cert-manager-devices",
+ "apple-cert-manager-engine",
+ "apple-cert-manager-error",
+ "apple-cert-manager-install",
+ "apple-cert-manager-portal",
+ "apple-cert-manager-signing",
+ "apple-cert-manager-storage",
+ "apple-cert-manager-types",
+ "base64 0.22.1",
+ "clap",
+ "tempfile",
+]
+
+[[package]]
+name = "apple-cert-manager-config"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-error",
+ "apple-cert-manager-types",
+ "serde",
+ "toml",
+]
+
+[[package]]
+name = "apple-cert-manager-crypto"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-error",
+ "base64 0.22.1",
+ "hex",
+ "hmac",
+ "openssl",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
+name = "apple-cert-manager-devices"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-error",
+]
+
+[[package]]
+name = "apple-cert-manager-engine"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-config",
+ "apple-cert-manager-crypto",
+ "apple-cert-manager-devices",
+ "apple-cert-manager-error",
+ "apple-cert-manager-portal",
+ "apple-cert-manager-storage",
+ "apple-cert-manager-types",
+ "plist",
+ "tempfile",
+]
+
+[[package]]
+name = "apple-cert-manager-error"
+version = "0.1.0"
+dependencies = [
+ "jsonwebtoken",
+ "openssl",
+ "reqwest",
+ "serde_json",
+ "thiserror 1.0.69",
+ "toml",
+]
+
+[[package]]
+name = "apple-cert-manager-install"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-config",
+ "apple-cert-manager-engine",
+ "apple-cert-manager-error",
+ "apple-cert-manager-signing",
+ "apple-cert-manager-types",
+ "core-foundation",
+ "core-foundation-sys",
+ "hex",
+ "plist",
+ "security-framework",
+ "security-framework-sys",
+]
+
+[[package]]
+name = "apple-cert-manager-portal"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-config",
+ "apple-cert-manager-crypto",
+ "apple-cert-manager-error",
+ "base64 0.22.1",
+ "chrono",
+ "jsonwebtoken",
+ "openssl",
+ "reqwest",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "apple-cert-manager-signing"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-engine",
+ "apple-cert-manager-error",
+ "apple-cert-manager-types",
+ "plist",
+ "tempfile",
+]
+
+[[package]]
+name = "apple-cert-manager-storage"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-config",
+ "apple-cert-manager-error",
+ "chrono",
+ "hex",
+ "hmac",
+ "reqwest",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
+name = "apple-cert-manager-types"
+version = "0.1.0"
+dependencies = [
+ "apple-cert-manager-error",
+ "serde",
 ]
 
 [[package]]

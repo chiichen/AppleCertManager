@@ -1,0 +1,17 @@
+[package]
+name = "apple-cert-manager-crypto"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Match-compatible encryption and certificate material"
+
+[dependencies]
+apple-cert-manager-error.workspace = true
+base64.workspace = true
+hex.workspace = true
+hmac.workspace = true
+openssl.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

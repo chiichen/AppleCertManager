@@ -1,0 +1,10 @@
+[package]
+name = "apple-cert-manager-types"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Match signing lanes and Apple platforms"
+
+[dependencies]
+apple-cert-manager-error.workspace = true
+serde.workspace = true

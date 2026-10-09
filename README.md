@@ -1,8 +1,8 @@
 # AppleCertManager
 
-用一条命令管理 Apple 签名证书和描述文件。仓库布局、加密格式和 `sigh_*` 环境变量与 fastlane match 兼容，实现是 Rust 命令 `acm`。
+用一条命令管理 Apple 签名证书和描述文件。仓库布局、加密格式和 `sigh_*` 环境变量与 fastlane match 兼容，实现是 Rust 命令 `apple-cert-manager`。
 
-`acm sync` 会读取证书仓库里的 `devices.txt`，在 App Store Connect 上登记设备、创建 Bundle ID、证书和描述文件，把它们加密后写入存储，再生成 Xcode 可以直接使用的签名文件。在 macOS 上，同一条命令通过 Security.framework 把证书导入钥匙串，并把描述文件装进 Xcode。
+`apple-cert-manager sync` 会读取证书仓库里的 `devices.txt`，在 App Store Connect 上登记设备、创建 Bundle ID、证书和描述文件，把它们加密后写入存储，再生成 Xcode 可以直接使用的签名文件。在 macOS 上，同一条命令通过 Security.framework 把证书导入钥匙串，并把描述文件装进 Xcode。
 
 ## 准备
 
@@ -14,7 +14,7 @@ export MATCH_PASSWORD='仓库加密口令'
 口令只从 `MATCH_PASSWORD` 读取，不会写入 `acm.toml`。Apple 侧只使用 App Store Connect API Key（`.p8`），不使用 Apple ID 密码。
 
 ```bash
-acm init
+apple-cert-manager init
 ```
 
 这会在当前目录生成 `acm.toml`，并在证书仓库里写入 `devices.txt`。示例配置的证书仓库是本地目录 `./certs`，所以设备文件在 `./certs/devices.txt`。按团队信息改 `acm.toml`，把设备按下面的格式写进证书仓库里的 `devices.txt`（制表符、逗号或空白都可以，表头可省略）：
@@ -35,11 +35,11 @@ API Key 也可以用环境变量，不放进配置文件：
 ## 同步
 
 ```bash
-acm doctor
-acm sync
+apple-cert-manager doctor
+apple-cert-manager sync
 ```
 
-`acm sync` 会：
+`apple-cert-manager sync` 会：
 
 1. 读取证书仓库里的 `devices.txt`，把还没有的设备登记到开发者门户。文件和 `certs/`、`profiles/` 放在同一套 local、git 或 s3 存储里，以明文保存。
 2. 创建缺少的 Bundle ID、证书和描述文件。Ad Hoc 与 App Store 共用 `certs/distribution` 里的发布证书。
@@ -52,7 +52,7 @@ acm sync
 只拉取、不创建：
 
 ```bash
-acm sync --readonly
+apple-cert-manager sync --readonly
 ```
 
 ## 存储
@@ -68,34 +68,34 @@ acm sync --readonly
 ## 其他命令
 
 ```bash
-acm import --type development ./cert.cer ./cert.p12 ./Development_com.example.app.mobileprovision
-acm nuke --type development --yes
-acm change-password          # 新口令放在 MATCH_PASSWORD_NEW
-acm migrate --dest other.toml
-acm encrypt ./certs
-acm decrypt ./certs
+apple-cert-manager import --type development ./cert.cer ./cert.p12 ./Development_com.example.app.mobileprovision
+apple-cert-manager nuke --type development --yes
+apple-cert-manager change-password          # 新口令放在 MATCH_PASSWORD_NEW
+apple-cert-manager migrate --dest other.toml
+apple-cert-manager encrypt ./certs
+apple-cert-manager decrypt ./certs
 ```
 
-`nuke` 会删除该 lane 的证书目录和描述文件，并在 Apple 上吊销对应证书。Ad Hoc 和 App Store 共用发布证书，吊销其中任意一个都会删掉这份发布证书。Developer ID 不能用 API Key 创建，用 `acm import` 放进仓库。
+`nuke` 会删除该 lane 的证书目录和描述文件，并在 Apple 上吊销对应证书。Ad Hoc 和 App Store 共用发布证书，吊销其中任意一个都会删掉这份发布证书。Developer ID 不能用 API Key 创建，用 `apple-cert-manager import` 放进仓库。
 
 `--legacy` 让新写入的文件使用 match v1 加密。
 
 ## 开发
 
-仓库是 Cargo workspace。各模块是独立的库 crate，命令行由 `acm-cli` 组合这些库，二进制名仍是 `acm`。
+仓库是 Cargo workspace。各模块是独立的库 crate，命令行 crate 是 `apple-cert-manager`，二进制名也是 `apple-cert-manager`。
 
 ```text
-crates/acm-error      统一错误类型
-crates/acm-types      签名类型、平台、match 路径和 sigh 名称
-crates/acm-crypto     match v1/v2 加解密和证书检查
-crates/acm-devices    devices.txt 解析
-crates/acm-config     acm.toml 和环境变量
-crates/acm-storage    本地、Git、S3 存储
-crates/acm-portal     App Store Connect API
-crates/acm-engine     sync、nuke、import、migrate、改口令
-crates/acm-signing    signing.env、xcconfig、ExportOptions
-crates/acm-install    描述文件安装和 macOS 钥匙串
-crates/acm-cli        acm 命令，组合上面的库
+crates/apple-cert-manager-error      统一错误类型
+crates/apple-cert-manager-types      签名类型、平台、match 路径和 sigh 名称
+crates/apple-cert-manager-crypto     match v1/v2 加解密和证书检查
+crates/apple-cert-manager-devices    devices.txt 解析
+crates/apple-cert-manager-config     acm.toml 和环境变量
+crates/apple-cert-manager-storage    本地、Git、S3 存储
+crates/apple-cert-manager-portal     App Store Connect API
+crates/apple-cert-manager-engine     sync、nuke、import、migrate、改口令
+crates/apple-cert-manager-signing    signing.env、xcconfig、ExportOptions
+crates/apple-cert-manager-install    描述文件安装和 macOS 钥匙串
+crates/apple-cert-manager          命令行，组合上面的库
 ```
 
 ```bash
@@ -103,4 +103,4 @@ cargo test --workspace
 cargo build --workspace --release
 ```
 
-需要 Rust 1.88 或更新版本，以及 OpenSSL 头文件。macOS 钥匙串代码只在 `target_os = "macos"` 下编译。发布二进制在 `target/release/acm`。
+需要 Rust 1.88 或更新版本，以及 OpenSSL 头文件。macOS 钥匙串代码只在 `target_os = "macos"` 下编译。发布二进制在 `target/release/apple-cert-manager`。

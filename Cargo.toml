@@ -1,17 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/acm-error",
-    "crates/acm-types",
-    "crates/acm-crypto",
-    "crates/acm-devices",
-    "crates/acm-config",
-    "crates/acm-storage",
-    "crates/acm-portal",
-    "crates/acm-engine",
-    "crates/acm-signing",
-    "crates/acm-install",
-    "crates/acm-cli",
+    "crates/apple-cert-manager-error",
+    "crates/apple-cert-manager-types",
+    "crates/apple-cert-manager-crypto",
+    "crates/apple-cert-manager-devices",
+    "crates/apple-cert-manager-config",
+    "crates/apple-cert-manager-storage",
+    "crates/apple-cert-manager-portal",
+    "crates/apple-cert-manager-engine",
+    "crates/apple-cert-manager-signing",
+    "crates/apple-cert-manager-install",
+    "crates/apple-cert-manager",
 ]
 
 [workspace.package]
@@ -22,16 +22,16 @@ description = "One-command Apple certificate manager compatible with fastlane ma
 readme = "README.md"
 
 [workspace.dependencies]
-acm-error = { path = "crates/acm-error" }
-acm-types = { path = "crates/acm-types" }
-acm-crypto = { path = "crates/acm-crypto" }
-acm-devices = { path = "crates/acm-devices" }
-acm-config = { path = "crates/acm-config" }
-acm-storage = { path = "crates/acm-storage" }
-acm-portal = { path = "crates/acm-portal" }
-acm-engine = { path = "crates/acm-engine" }
-acm-signing = { path = "crates/acm-signing" }
-acm-install = { path = "crates/acm-install" }
+apple-cert-manager-error = { path = "crates/apple-cert-manager-error" }
+apple-cert-manager-types = { path = "crates/apple-cert-manager-types" }
+apple-cert-manager-crypto = { path = "crates/apple-cert-manager-crypto" }
+apple-cert-manager-devices = { path = "crates/apple-cert-manager-devices" }
+apple-cert-manager-config = { path = "crates/apple-cert-manager-config" }
+apple-cert-manager-storage = { path = "crates/apple-cert-manager-storage" }
+apple-cert-manager-portal = { path = "crates/apple-cert-manager-portal" }
+apple-cert-manager-engine = { path = "crates/apple-cert-manager-engine" }
+apple-cert-manager-signing = { path = "crates/apple-cert-manager-signing" }
+apple-cert-manager-install = { path = "crates/apple-cert-manager-install" }
 base64 = "0.22"
 chrono = "0.4"
 clap = { version = "4", features = ["derive"] }

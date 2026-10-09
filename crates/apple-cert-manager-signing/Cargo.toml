@@ -1,0 +1,15 @@
+[package]
+name = "apple-cert-manager-signing"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Xcode signing.env, xcconfig, and export options"
+
+[dependencies]
+apple-cert-manager-engine.workspace = true
+apple-cert-manager-error.workspace = true
+apple-cert-manager-types.workspace = true
+plist.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
