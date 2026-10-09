@@ -1,0 +1,12 @@
+[package]
+name = "acm-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "acm.toml configuration"
+
+[dependencies]
+acm-error.workspace = true
+acm-types.workspace = true
+serde.workspace = true
+toml.workspace = true
