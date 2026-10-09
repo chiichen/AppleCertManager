@@ -70,6 +70,9 @@ impl KeyMaterial {
 /// 3DES for both the key and the certificate, which `SecPKCS12Import` accepts
 /// when the password is not empty. The password exists only for that import.
 pub fn reprotect_p12_for_keychain(bytes: &[u8], password: &str) -> Result<(Vec<u8>, String)> {
+    // The stored archive uses RC2-40. OpenSSL 3 cannot decrypt that unless
+    // the legacy provider is loaded in this process.
+    ensure_legacy_provider()?;
     let parsed = Pkcs12::from_der(bytes)?.parse2(password)?;
     let pkey = parsed
         .pkey
