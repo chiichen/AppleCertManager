@@ -18,6 +18,8 @@ pub use object::{MemoryStore, ObjectRepo, ObjectStore};
 pub use s3::S3Client;
 pub use sigv4::{sign_request, SignInput};
 
+pub(crate) use files::copy_tree;
+
 use crate::config::{Config, StorageMode};
 use crate::{Error, Result};
 
