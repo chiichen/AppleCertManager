@@ -1,0 +1,21 @@
+[package]
+name = "apple-cert-manager"
+version = "0.1.0"
+edition = "2021"
+description = "One-command Apple certificate manager compatible with fastlane match"
+readme = "README.md"
+rust-version = "1.88"
+
+[[bin]]
+name = "acm"
+path = "src/main.rs"
+
+[dependencies]
+base64 = "0.22"
+openssl = "0.10"
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+toml = "0.8"
+
+[dev-dependencies]
+tempfile = "3"
