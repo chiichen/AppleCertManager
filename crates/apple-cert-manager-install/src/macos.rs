@@ -13,20 +13,15 @@ use std::ptr;
 use core_foundation::array::CFArray;
 use core_foundation::base::{CFType, TCFType, ToVoid};
 use core_foundation::boolean::CFBoolean;
-use core_foundation::data::CFData;
 use core_foundation::dictionary::CFMutableDictionary;
 use core_foundation::string::CFString;
 use core_foundation_sys::array::{CFArrayGetTypeID, CFArrayRef};
 use core_foundation_sys::base::{CFEqual, CFGetTypeID, CFRelease, CFTypeRef, OSStatus};
-use core_foundation_sys::data::CFDataRef;
 use core_foundation_sys::string::CFStringRef;
 use security_framework::base::Error as SecurityError;
 use security_framework::import_export::Pkcs12ImportOptions;
 use security_framework::os::macos::keychain::{CreateOptions, SecKeychain};
-use security_framework_sys::base::{SecAccessRef, SecKeychainItemRef, SecKeychainRef};
-use security_framework_sys::import_export::{
-    kSecFormatOpenSSL, SecItemImportExportKeyParameters, SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION,
-};
+use security_framework_sys::base::{SecAccessRef, SecKeychainItemRef};
 use security_framework_sys::item::{
     kSecClass, kSecClassKey, kSecMatchLimit, kSecMatchLimitAll, kSecMatchSearchList, kSecReturnRef,
 };
@@ -78,16 +73,6 @@ extern "C" {
     ) -> OSStatus;
     fn SecKeychainCopySearchList(search_list: *mut CFArrayRef) -> OSStatus;
     fn SecKeychainSetSearchList(search_list: CFArrayRef) -> OSStatus;
-    fn SecKeychainItemImport(
-        imported_data: CFDataRef,
-        file_name_or_extension: CFStringRef,
-        input_format: *mut u32,
-        item_type: *mut u32,
-        flags: u32,
-        key_params: *const SecItemImportExportKeyParameters,
-        import_keychain: SecKeychainRef,
-        out_items: *mut CFArrayRef,
-    ) -> OSStatus;
 }
 
 pub fn install(report: &SyncReport, sync: &SyncConfig) -> Result<InstallOutcome> {
@@ -216,23 +201,22 @@ fn import_identities(
         match importer.import(&certificate.p12) {
             Ok(items) => installed += items.len().max(1),
             Err(err) if err.code() == ERR_SEC_DUPLICATE_ITEM => installed += 1,
-            // macOS 15 and later reject an empty-password PKCS#12 through
-            // SecPKCS12Import. `security import -f openssl` uses
-            // SecKeychainItemImport and accepts the same bytes.
+            // macOS 15 and later reject the MAC of an empty-password PKCS#12.
+            // OpenSSL can still read it. Re-export with a temporary password
+            // and 3DES, then import that copy.
             Err(err)
-                if p12_password.is_empty()
-                    && matches!(
-                        err.code(),
-                        ERR_SEC_AUTH_FAILED | ERR_SEC_PKCS12_VERIFY_FAILURE
-                    ) =>
+                if matches!(
+                    err.code(),
+                    ERR_SEC_AUTH_FAILED | ERR_SEC_PKCS12_VERIFY_FAILURE
+                ) =>
             {
-                import_empty_password_identity(keychain, &certificate.p12).map_err(|fallback| {
-                    Error::msg(format!(
-                        "cannot import certificate {} into the keychain: {err}; openssl-format import: {fallback}",
-                        certificate.id
-                    ))
-                })?;
-                installed += 1;
+                installed += import_reprotected(keychain, &certificate.p12, p12_password)
+                    .map_err(|fallback| {
+                        Error::msg(format!(
+                            "cannot import certificate {} into the keychain: {err}; reprotected import: {fallback}",
+                            certificate.id
+                        ))
+                    })?;
             }
             Err(err) => {
                 return Err(Error::msg(format!(
@@ -245,42 +229,17 @@ fn import_identities(
     Ok(installed)
 }
 
-fn import_empty_password_identity(keychain: &SecKeychain, p12: &[u8]) -> Result<()> {
-    let data = CFData::from_buffer(p12);
-    let name = CFString::new("identity.p12");
-    let passphrase = CFString::new("");
-    let params = SecItemImportExportKeyParameters {
-        version: SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION,
-        flags: 0,
-        passphrase: passphrase.as_CFTypeRef(),
-        alertTitle: ptr::null(),
-        alertPrompt: ptr::null(),
-        accessRef: ptr::null_mut(),
-        keyUsage: ptr::null(),
-        keyAttributes: ptr::null(),
-    };
-    let mut format = kSecFormatOpenSSL;
-    let mut item_type = 0;
-    let mut items = ptr::null();
-    let code = unsafe {
-        SecKeychainItemImport(
-            data.as_concrete_TypeRef(),
-            name.as_concrete_TypeRef(),
-            &mut format,
-            &mut item_type,
-            0,
-            &params,
-            keychain.as_concrete_TypeRef(),
-            &mut items,
-        )
-    };
-    if !items.is_null() {
-        unsafe { CFRelease(items as CFTypeRef) };
-    }
-    if code == 0 || code == ERR_SEC_DUPLICATE_ITEM {
-        Ok(())
-    } else {
-        status(code, "SecKeychainItemImport")
+fn import_reprotected(keychain: &SecKeychain, p12: &[u8], password: &str) -> Result<usize> {
+    let (wrapped, wrapped_password) =
+        apple_cert_manager_crypto::reprotect_p12_for_keychain(p12, password)?;
+    let mut importer = Pkcs12ImportOptions::new();
+    importer
+        .passphrase(&wrapped_password)
+        .keychain(keychain.clone());
+    match importer.import(&wrapped) {
+        Ok(items) => Ok(items.len().max(1)),
+        Err(err) if err.code() == ERR_SEC_DUPLICATE_ITEM => Ok(1),
+        Err(err) => Err(Error::msg(err.to_string())),
     }
 }
 
